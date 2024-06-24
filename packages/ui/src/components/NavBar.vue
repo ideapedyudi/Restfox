@@ -4,9 +4,11 @@
             <img src="/pwa-192x192.png" width="20" height="20" style="margin-right: 5px;">
             <div v-if="!activeWorkspaceLoaded">Workspaces</div>
             <div v-else>
-                <a href="#" @click.prevent="setActiveWorkspace(null)">Workspaces</a> > <span>{{ activeWorkspace.name }}</span>
+                <a href="#" @click.prevent="setActiveWorkspace(null)">Workspaces</a> > <span>{{ activeWorkspace.name
+                    }}</span>
             </div>
-            <div style="margin-left: 0.5rem; font-size: 0.6rem" v-if="activeWorkspaceLoaded && activeWorkspace._type === 'file'">
+            <div style="margin-left: 0.5rem; font-size: 0.6rem"
+                v-if="activeWorkspaceLoaded && activeWorkspace._type === 'file'">
                 <button class="button" @click="openWorkspaceFolder">Open Folder</button>
             </div>
         </div>
@@ -14,35 +16,34 @@
             <a href="#" @click.prevent="cycleTheme()" class="bl">Theme: {{ getThemeName(theme) }}</a>
             <div v-if="nav === 'collection'" style="height: 100%;">
                 <template v-if="activeTab && activeTab._type === 'request'">
-                    <a href="#" @click.prevent="requestResponseLayout = 'top-bottom'" v-if="requestResponseLayout === 'left-right'" class="bl">View: Column</a>
+                    <a href="#" @click.prevent="requestResponseLayout = 'top-bottom'"
+                        v-if="requestResponseLayout === 'left-right'" class="bl">View: Column</a>
                     <a href="#" @click.prevent="requestResponseLayout = 'left-right'" v-else class="bl">View: Row</a>
                 </template>
                 <div style="display: inline-flex; align-items: center; height: 100%; margin-right: 0.5rem;">
-                    <a href="#" @click.prevent="environmentModalShow = true" style="margin-right: 0.2rem; padding-right: 0.2rem;" class="bl">Environment</a>
-                    <select v-model="currentEnvironment" style="border: 1px solid var(--default-border-color); outline: 0; background-color: inherit; height: 84%; border-radius: var(--default-border-radius)" title="Change Environment">
+                    <a href="#" @click.prevent="environmentModalShow = true"
+                        style="margin-right: 0.2rem; padding-right: 0.2rem;" class="bl">Environment</a>
+                    <select v-model="currentEnvironment"
+                        style="border: 1px solid var(--default-border-color); outline: 0; background-color: inherit; height: 84%; border-radius: var(--default-border-radius)"
+                        title="Change Environment">
                         <option v-for="environment in environments">{{ environment.name }}</option>
                     </select>
                 </div>
-                <a href="#" @click.prevent="showImportModal" class="bl">Import</a>
-                <a href="#" @click.prevent="exportCollection" class="bl">Export</a>
+                <!-- <a href="#" @click.prevent="showImportModal" class="bl">Import</a>
+                <a href="#" @click.prevent="exportCollection" class="bl">Export</a> -->
             </div>
             <template v-if="nav === 'workspaces'">
                 <a href="#" @click.prevent="showAddWorkspace" class="bl">Add Workspace</a>
-                <a href="#" @click.prevent="openFileWorkspace" class="bl" title="Open an existing file workspace" v-if="flags.isElectron">Open File Workspace</a>
+                <a href="#" @click.prevent="openFileWorkspace" class="bl" title="Open an existing file workspace"
+                    v-if="flags.isElectron">Open File Workspace</a>
                 <a href="#" @click.prevent="backupAndRestore" class="bl">Backup & Restore</a>
             </template>
-            <a href="#" @click.prevent="showPluginsManager" class="bl">Plugins</a>
+            <!-- <a href="#" @click.prevent="showPluginsManager" class="bl">Plugins</a> -->
             <a href="#" @click.prevent="showSettings" class="bl br">Settings</a>
             <a href="#" @click.prevent="showLogs" class="bl br">Logs</a>
             <span class="spacer"></span>
             <div>
-                <a class="gh-button-container" href="https://github.com/flawiddsouza/Restfox" rel="noopener" target="_blank" title="Star Restfox" aria-label="Star Restfox on GitHub">
-                    <svg viewBox="0 0 16 16" width="14" height="14" class="octicon octicon-mark-github" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
-                    </svg>
-                    <span style="margin-left: 3px; margin-right: 5px;">Star</span>
-                    <span :aria-label="`${githubStarCount} stargazers on GitHub`" style="border-left: 1px solid var(--default-border-color); padding-left: 5px; padding-top: 3px; padding-bottom: 3px;">{{ githubStarCount }}</span>
-                </a>
+                <p>Restfox 😎</p>
             </div>
         </div>
     </div>
@@ -113,7 +114,7 @@ export default {
                 })
                 const selectedEnvironment = this.environments.find(environmentItem => environmentItem.name === value)
                 this.activeWorkspace.environment = selectedEnvironment.environment
-                this.$store.commit('updateWorkspaceEnvironment',  {
+                this.$store.commit('updateWorkspaceEnvironment', {
                     workspaceId: this.activeWorkspace._id,
                     environment: selectedEnvironment.environment
                 })
@@ -151,14 +152,14 @@ export default {
     methods: {
         async exportCollection() {
             let { collection } = await getCollectionForWorkspace(this.activeWorkspace._id)
-            for(const item of collection) {
+            for (const item of collection) {
                 item.plugins = this.$store.state.plugins.workspace.filter(plugin => plugin.collectionId === item._id)
             }
 
             // if the workspace is a file workspace, we need to generate new ids for the collection
             // as ids are just file paths in the case of file workspaces
             // we don't want to leak the file paths in the exported collection
-            if(this.activeWorkspace._type === 'file') {
+            if (this.activeWorkspace._type === 'file') {
                 const collectionTree = toTree(collection)
                 generateNewIdsForTree(collectionTree)
                 collection = collectionTree
@@ -193,11 +194,11 @@ export default {
         },
         async openFileWorkspace() {
             const selectedFolderPath = await window.electronIPC.openFolderSelectionDialog()
-            if(selectedFolderPath) {
+            if (selectedFolderPath) {
                 try {
                     const workspace = await window.electronIPC.getWorkspaceAtLocation(selectedFolderPath)
                     const existingWorkspace = this.$store.state.workspaces.find(workspaceItem => workspaceItem.location === selectedFolderPath)
-                    if(existingWorkspace) {
+                    if (existingWorkspace) {
                         console.log(existingWorkspace)
                         this.setActiveWorkspace(existingWorkspace)
                     } else {
@@ -208,7 +209,7 @@ export default {
                             setAsActive: true
                         })
                     }
-                } catch(e) {
+                } catch (e) {
                     this.$toast.error('No workspace found in the selected folder')
                 }
             }
@@ -257,7 +258,8 @@ export default {
     height: 100%;
 }
 
-.heading a:not(:hover), .right-nav-container a {
+.heading a:not(:hover),
+.right-nav-container a {
     text-decoration: none;
 }
 
@@ -288,7 +290,7 @@ export default {
     line-height: 14px;
 }
 
-.right-nav-container .gh-button-container > svg {
+.right-nav-container .gh-button-container>svg {
     fill: var(--github-button-icon-fill-color);
 }
 </style>

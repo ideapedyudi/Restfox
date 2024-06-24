@@ -8,6 +8,7 @@ import {
     RequestFinalResponse,
     Workspace,
 } from './global'
+import axios from 'axios';
 
 export class RestfoxDatabase extends Dexie {
     workspaces!: Dexie.Table<any>
@@ -42,10 +43,21 @@ export async function exportDB() {
     return blob
 }
 
-export async function importDB(file: File) {
+export async function importDB() {
     await db.delete()
     await db.open()
-    await db.import(file)
+
+    const response = await axios.get('/service/restore', {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+
+    const jsonData = response.data;
+    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+    const jsonFile = new File([blob], 'downloaded_data.json', { type: 'application/json' });
+
+    await db.import(jsonFile);
     document.location.reload()
 }
 
@@ -60,9 +72,9 @@ export async function putWorkspace(workspace: Workspace) {
 }
 
 export async function updateWorkspace(workspaceId: string, updatedFields: Partial<Workspace>, skipUpdateForFileWorkspace = false) {
-    if(import.meta.env.MODE === 'desktop-electron' && !skipUpdateForFileWorkspace) {
+    if (import.meta.env.MODE === 'desktop-electron' && !skipUpdateForFileWorkspace) {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             // this will used for updating workspace name, environments & currentEnvironment
             try {
                 await window.electronIPC.updateWorkspace(workspace, updatedFields)
@@ -78,7 +90,7 @@ export async function updateWorkspace(workspaceId: string, updatedFields: Partia
         }
     }
 
-    if(Object.keys(updatedFields).length === 0) {
+    if (Object.keys(updatedFields).length === 0) {
         return
     }
 
@@ -96,13 +108,13 @@ export async function getAllCollectionIdsForGivenWorkspace(workspaceId: string) 
 }
 
 export async function getCollectionForWorkspace(workspaceId: string, type = null): Promise<{ error: string | null, collection: CollectionItem[], workspace: FileWorkspace | null, idMap: Map<string, string> | null }> {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             const result = await window.electronIPC.getCollectionForWorkspace(workspace, type)
 
             if (type === null) {
-                for(const collectionItem of result.collection) {
+                for (const collectionItem of result.collection) {
                     deserializeRequestFiles(collectionItem)
                 }
             }
@@ -115,7 +127,7 @@ export async function getCollectionForWorkspace(workspaceId: string, type = null
         workspaceId
     }
 
-    if(type) {
+    if (type) {
         where._type = type
     }
 
@@ -129,9 +141,9 @@ export async function getCollectionForWorkspace(workspaceId: string, type = null
 }
 
 export async function getCollectionById(workspaceId: string, collectionId: string): Promise<CollectionItem> {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.getCollectionById(workspace, collectionId)
         }
     }
@@ -146,9 +158,9 @@ interface CreateCollectionResult {
 }
 
 export async function createCollection(workspaceId: string, collection: CollectionItem): Promise<CreateCollectionResult> {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.createCollection(workspace, collection)
         }
     }
@@ -168,9 +180,9 @@ export async function createCollections(workspaceId: string, collections: Collec
 }> {
     console.log('createCollections', collections)
 
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             const collectionsClone = structuredClone(collections)
             await Promise.all(collectionsClone.map(collection => serializeRequestFiles(collection)))
             console.log('createCollections: serialized', collectionsClone)
@@ -199,13 +211,13 @@ function transformFileObjectToFile(file: FileObject): File {
 }
 
 async function serializeRequestFiles(collection: Partial<CollectionItem>) {
-    if(collection.body && collection.body.fileName && collection.body.fileName instanceof File) {
+    if (collection.body && collection.body.fileName && collection.body.fileName instanceof File) {
         collection.body.fileName = await transformFileToFileObject(collection.body.fileName)
     }
 
-    if(collection.body && collection.body.params) {
-        for(const param of collection.body.params) {
-            if(param.files) {
+    if (collection.body && collection.body.params) {
+        for (const param of collection.body.params) {
+            if (param.files) {
                 // filter out non-file objects
                 param.files = (param.files as any[]).filter(file => file instanceof File)
                 param.files = await Promise.all(param.files.map(async file => await transformFileToFileObject(file as File)))
@@ -215,13 +227,13 @@ async function serializeRequestFiles(collection: Partial<CollectionItem>) {
 }
 
 function deserializeRequestFiles(collection: Partial<CollectionItem>) {
-    if(collection.body && collection.body.fileName && 'buffer' in collection.body.fileName && collection.body.fileName.buffer instanceof Uint8Array) {
+    if (collection.body && collection.body.fileName && 'buffer' in collection.body.fileName && collection.body.fileName.buffer instanceof Uint8Array) {
         collection.body.fileName = transformFileObjectToFile(collection.body.fileName)
     }
 
-    if(collection.body && collection.body.params) {
-        for(const param of collection.body.params) {
-            if(param.files) {
+    if (collection.body && collection.body.params) {
+        for (const param of collection.body.params) {
+            if (param.files) {
                 param.files = param.files.map(file => transformFileObjectToFile(file as FileObject))
             }
         }
@@ -229,18 +241,18 @@ function deserializeRequestFiles(collection: Partial<CollectionItem>) {
 }
 
 async function serializeRequestResponseFiles(response: RequestFinalResponse) {
-    if(response.request && response.request.body instanceof File) {
+    if (response.request && response.request.body instanceof File) {
         response.request.body = await transformFileToFileObject(response.request.body)
     }
 
-    if(response.request && response.request.original.body) {
-        if(response.request.original.body.fileName && response.request.original.body.fileName instanceof File) {
+    if (response.request && response.request.original.body) {
+        if (response.request.original.body.fileName && response.request.original.body.fileName instanceof File) {
             response.request.original.body.fileName = await transformFileToFileObject(response.request.original.body.fileName)
         }
 
-        if(response.request.original.body.params) {
-            for(const param of response.request.original.body.params) {
-                if(param.files) {
+        if (response.request.original.body.params) {
+            for (const param of response.request.original.body.params) {
+                if (param.files) {
                     // filter out non-file objects
                     param.files = (param.files as any[]).filter(file => file instanceof File)
                     param.files = await Promise.all(param.files.map(file => transformFileToFileObject(file as File)))
@@ -251,18 +263,18 @@ async function serializeRequestResponseFiles(response: RequestFinalResponse) {
 }
 
 function deserializeRequestResponseFiles(response: RequestFinalResponse) {
-    if(response.request.body && response.request.body.buffer instanceof Uint8Array) {
+    if (response.request.body && response.request.body.buffer instanceof Uint8Array) {
         response.request.body = transformFileObjectToFile(response.request.body)
     }
 
-    if(response.request.original.body) {
-        if(response.request.original.body.fileName && response.request.original.body.fileName instanceof Uint8Array) {
+    if (response.request.original.body) {
+        if (response.request.original.body.fileName && response.request.original.body.fileName instanceof Uint8Array) {
             response.request.original.body.fileName = transformFileObjectToFile(response.request.original.body.fileName)
         }
 
-        if(response.request.original.body.params) {
-            for(const param of response.request.original.body.params) {
-                if(param.files) {
+        if (response.request.original.body.params) {
+            for (const param of response.request.original.body.params) {
+                if (param.files) {
                     param.files = param.files.map(file => transformFileObjectToFile(file as FileObject))
                 }
             }
@@ -271,9 +283,9 @@ function deserializeRequestResponseFiles(response: RequestFinalResponse) {
 }
 
 export async function updateCollection(workspaceId: string, collectionId: string, updatedFields: Partial<CollectionItem>): Promise<{ error: string | null }> {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             await serializeRequestFiles(updatedFields)
             return window.electronIPC.updateCollection(workspace, collectionId, updatedFields)
         }
@@ -291,9 +303,9 @@ export async function modifyCollections(workspaceId: string) {
 }
 
 export async function deleteCollectionsByWorkspaceId(workspaceId: string) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.deleteCollectionsByWorkspaceId(workspace)
         }
     }
@@ -302,9 +314,9 @@ export async function deleteCollectionsByWorkspaceId(workspaceId: string) {
 }
 
 export async function deleteCollectionsByIds(workspaceId: string, collectionIds: string[]): Promise<{ error: string | null }> {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.deleteCollectionsByIds(workspace, collectionIds)
         }
     }
@@ -319,11 +331,11 @@ export async function deleteCollectionsByIds(workspaceId: string, collectionIds:
 // Responses
 
 export async function getResponsesByCollectionId(workspaceId: string, collectionId: string): Promise<RequestFinalResponse[]> {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             const responses = await window.electronIPC.getResponsesByCollectionId(workspace, collectionId)
-            for(const response of responses) {
+            for (const response of responses) {
                 deserializeRequestResponseFiles(response)
             }
             return responses
@@ -334,9 +346,9 @@ export async function getResponsesByCollectionId(workspaceId: string, collection
 }
 
 export async function createResponse(workspaceId: string, response: RequestFinalResponse) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             await serializeRequestResponseFiles(response)
             return window.electronIPC.createResponse(workspace, response)
         }
@@ -346,9 +358,9 @@ export async function createResponse(workspaceId: string, response: RequestFinal
 }
 
 export async function updateResponse(workspaceId: string, collectionId: string, responseId: string, updatedFields: Partial<RequestFinalResponse>) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.updateResponse(workspace, collectionId, responseId, updatedFields)
         }
     }
@@ -357,9 +369,9 @@ export async function updateResponse(workspaceId: string, collectionId: string, 
 }
 
 export async function deleteResponse(workspaceId: string, collectionId: string, responseId: string) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.deleteResponse(workspace, collectionId, responseId)
         }
     }
@@ -373,9 +385,9 @@ export async function deleteResponsesByIds(workspaceId: string, collectionId: st
         responseIds,
     })
 
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.deleteResponsesByIds(workspace, collectionId, responseIds)
         }
     }
@@ -384,9 +396,9 @@ export async function deleteResponsesByIds(workspaceId: string, collectionId: st
 }
 
 export async function deleteResponsesByCollectionIds(workspaceId: string, collectionIds: string[]) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.deleteResponsesByCollectionIds(workspace, collectionIds)
         }
     }
@@ -395,9 +407,9 @@ export async function deleteResponsesByCollectionIds(workspaceId: string, collec
 }
 
 export async function deleteResponsesByCollectionId(workspaceId: string, collectionId: string) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
-        if(workspace._type === 'file') {
+        if (workspace._type === 'file') {
             return window.electronIPC.deleteResponsesByCollectionId(workspace, collectionId)
         }
     }
@@ -414,7 +426,7 @@ export async function getGlobalPlugins() {
 }
 
 export async function getWorkspacePlugins(workspaceId: string) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
             return window.electronIPC.getWorkspacePlugins(workspace)
@@ -438,7 +450,7 @@ export async function createPlugin(plugin: Plugin, workspaceId: string | null = 
         workspaceId,
     })
 
-    if(import.meta.env.MODE === 'desktop-electron' && workspaceId !== null) {
+    if (import.meta.env.MODE === 'desktop-electron' && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
             return window.electronIPC.createPlugin(workspace, plugin)
@@ -456,7 +468,7 @@ export async function updatePlugin(pluginId: string, updatedFields: Partial<Plug
         collectionId,
     })
 
-    if(import.meta.env.MODE === 'desktop-electron' && workspaceId !== null) {
+    if (import.meta.env.MODE === 'desktop-electron' && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
             return window.electronIPC.updatePlugin(workspace, collectionId, pluginId, updatedFields)
@@ -473,7 +485,7 @@ export async function deletePlugin(pluginId: string, workspaceId: string | null 
         collectionId,
     })
 
-    if(import.meta.env.MODE === 'desktop-electron' && workspaceId !== null) {
+    if (import.meta.env.MODE === 'desktop-electron' && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
             return window.electronIPC.deletePlugin(workspace, collectionId, pluginId)
@@ -484,7 +496,7 @@ export async function deletePlugin(pluginId: string, workspaceId: string | null 
 }
 
 export async function deletePluginsByWorkspace(workspaceId: string) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
             return window.electronIPC.deletePluginsByWorkspace(workspace)
@@ -495,7 +507,7 @@ export async function deletePluginsByWorkspace(workspaceId: string) {
 }
 
 export async function deletePluginsByCollectionIds(workspaceId: string, collectionIds: string[]) {
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
             return window.electronIPC.deletePluginsByCollectionIds(workspace, collectionIds)
@@ -512,7 +524,7 @@ export async function createPlugins(plugins: Plugin[], workspaceId: string | nul
         workspaceId,
     })
 
-    if(import.meta.env.MODE === 'desktop-electron' && workspaceId !== null) {
+    if (import.meta.env.MODE === 'desktop-electron' && workspaceId !== null) {
         const workspace = await db.workspaces.get(workspaceId)
         if (workspace._type === 'file') {
             return window.electronIPC.createPlugins(workspace, plugins)

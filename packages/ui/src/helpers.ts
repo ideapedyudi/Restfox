@@ -9,6 +9,8 @@ import { HighlightStyle } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 import { convert as curlConvert } from './parsers/curl'
 import yaml from 'js-yaml'
+import axios from 'axios';
+import FormDataNode from 'form-data';
 import {
     CollectionItem,
     RequestBody,
@@ -1541,7 +1543,27 @@ export function codeMirrorSyntaxHighlighting() {
     return highlightStyle
 }
 
-export function downloadBlob(filename: string, blob: Blob) {
+async function sendBlobToAPI(blob: Blob) {
+    try {
+        const fm = new FormDataNode();
+        fm.append('file', blob, 'backup.json');
+
+        const response = await axios.post('/service/backup', fm, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        console.log('Respon dari API:', response.data);
+    } catch (error) {
+        console.error('Terjadi kesalahan saat mengirim Blob ke API:', error);
+    }
+}
+
+export async function downloadBlob(filename: string, blob: Blob) {
+
+    await sendBlobToAPI(blob)
+
     const link = document.createElement('a')
 
     link.download = filename

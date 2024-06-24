@@ -2,9 +2,10 @@
     <modal title="Backup & Restore" v-model="showBackupAndRestoreModal" v-if="showBackupAndRestoreModal">
         <h3 style="margin-bottom: 1rem">Backup</h3>
         <div style="border: 1px solid var(--modal-border-color); padding: 1rem;">
-            This backup will include your full application data (workspaces, requests, response history, open tabs, plugins etc).
+            This backup will include your full application data (workspaces, requests, response history, open tabs,
+            plugins etc).
             <div style="margin-top: 1rem">
-                <button class="button" @click="exportBackup">Download Backup</button>
+                <button class="button" @click="exportBackup">Backup To Server</button>
             </div>
         </div>
 
@@ -15,12 +16,12 @@
             <form @submit.prevent="restoreBackup">
                 Restoring a backup will clear your current app data and restore the data saved in the backup!
 
-                <div style="margin-top: 1rem">
+                <!-- <div style="margin-top: 1rem">
                     <input type="file" @change="fileToRestore = $event.target.files[0]" accept=".json" required>
-                </div>
+                </div> -->
 
                 <div style="margin-top: 1.5rem;">
-                    <button class="button">Restore Backup</button>
+                    <button class="button">Restore Server</button>
                 </div>
             </form>
         </div>
@@ -57,14 +58,14 @@ export default {
             downloadBlob(`Restfox_Backup_${todayISODate()}.json`, blob)
         },
         async restoreBackup() {
-            if(!await window.createConfirm('Are you sure?')) {
+            if (!await window.createConfirm('Are you sure?')) {
                 return
             }
 
             try {
                 await importDB(this.fileToRestore)
                 this.$toast.success('Backup restored successfully')
-            } catch(e) {
+            } catch (e) {
                 console.log(e)
                 this.$toast.error('Invalid backup file given')
             }

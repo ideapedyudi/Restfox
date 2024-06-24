@@ -24,7 +24,7 @@ const test = (testResults: PluginTestResult[]) => (description: string, callback
             description,
             passed: true
         })
-    } catch(error: any) {
+    } catch (error: any) {
         testResults.push({
             description,
             passed: false,
@@ -64,17 +64,17 @@ const generalContextMethodsBase = {
 export function createRequestContextForPlugin(request: CollectionItem, environment: any, setEnvironmentVariable: ((name: string, value: string) => void) | null, testResults: PluginTestResult[]): { expose: PluginExpose } {
     const state: CollectionItem = JSON.parse(JSON.stringify(request))
 
-    if(state.body === undefined) {
+    if (state.body === undefined) {
         state.body = {
             mimeType: 'No Body'
         }
     }
 
-    if(request.body?.params) {
+    if (request.body?.params) {
         const params: RequestParam[] = []
-        for(const param of request.body.params) {
-            const paramExtracted = {...param}
-            if(paramExtracted.files) {
+        for (const param of request.body.params) {
+            const paramExtracted = { ...param }
+            if (paramExtracted.files) {
                 paramExtracted.files = [...paramExtracted.files] as File[]
             }
             params.push(paramExtracted)
@@ -82,7 +82,7 @@ export function createRequestContextForPlugin(request: CollectionItem, environme
         state.body.params = params
     }
 
-    if(request.body && 'fileName' in request.body) {
+    if (request.body && 'fileName' in request.body) {
         state.body.fileName = request.body.fileName
     }
 
@@ -92,7 +92,7 @@ export function createRequestContextForPlugin(request: CollectionItem, environme
             return getObjectPathValue(environment, objectPath)
         },
         setEnvVar(objectPath: string, value: string) {
-            if(setEnvironmentVariable) {
+            if (setEnvironmentVariable) {
                 setEnvironmentVariable(objectPath, value)
             }
         },
@@ -129,18 +129,18 @@ export function createRequestContextForPlugin(request: CollectionItem, environme
                 state.headers = requestHeaders
             },
             getHeader(headerName: string) {
-                if(state.headers === undefined) {
+                if (state.headers === undefined) {
                     state.headers = []
                 }
                 const header = state.headers.find((header) => header.name.toLowerCase() == headerName.toLowerCase())
                 return header ? substituteEnvironmentVariables(environment, header.value) : undefined
             },
             setHeader(headerName: string, value: string) {
-                if(state.headers === undefined) {
+                if (state.headers === undefined) {
                     state.headers = []
                 }
                 const headerIndex = state.headers.findIndex((header) => header.name.toLowerCase() == headerName.toLowerCase())
-                if(headerIndex >= 0) {
+                if (headerIndex >= 0) {
                     state.headers[headerIndex].value = value
                 } else {
                     state.headers.push({ name: headerName, value: value })
@@ -187,7 +187,7 @@ export function createResponseContextForPlugin(response: RequestFinalResponse, e
             getBodyJSON() {
                 try {
                     return JSON.parse((new TextDecoder('utf-8')).decode(bufferCopy))
-                } catch(e) {
+                } catch (e) {
                     return undefined
                 }
             },
@@ -249,7 +249,7 @@ function addReadFileToVM(vm: QuickJSContext, parentPathForReadFile: string | nul
         console.log('reading file', path)
         const promise = vm.newPromise()
         window.electronIPC.readFile(path, parentPathForReadFile).then((result: any) => {
-            if(result.error) {
+            if (result.error) {
                 const returnError = vm.newError(result.error)
                 promise.reject(returnError)
                 returnError.dispose()
@@ -277,7 +277,7 @@ function addReadFileToVM(vm: QuickJSContext, parentPathForReadFile: string | nul
 }
 
 function addFetchSyncToVM(vm: QuickJSAsyncContext) {
-    const fetchSyncHandle = vm.newAsyncifiedFunction('fetchSync', async(urlHandle, optionsHandle) => {
+    const fetchSyncHandle = vm.newAsyncifiedFunction('fetchSync', async (urlHandle, optionsHandle) => {
         const url = vm.getString(urlHandle)
         const options: RequestInit = optionsHandle ? vm.dump(optionsHandle) : {}
 
@@ -385,15 +385,15 @@ const runtime = QuickJS.newRuntime()
 
 let lastModulePath = ''
 
-runtime.setModuleLoader(async(modulePath) => {
-    if(modulePath.startsWith('/') === false) {
+runtime.setModuleLoader(async (modulePath) => {
+    if (modulePath.startsWith('/') === false) {
         lastModulePath = ''
     }
     console.log('Loading module', modulePath, lastModulePath + modulePath)
     const response = await fetch(lastModulePath + modulePath)
     const moduleSource = await response.text()
-    if(modulePath.startsWith('/') === false) {
-        if(modulePath.startsWith('https://esm.sh/')) {
+    if (modulePath.startsWith('/') === false) {
+        if (modulePath.startsWith('https://esm.sh/')) {
             lastModulePath = 'https://esm.sh'
         }
     }
@@ -407,7 +407,7 @@ export async function usePlugin(expose: PluginExpose, plugin: { name: string, co
     addAlertMethodToVM(vm)
     addAtobMethodToVM(vm)
 
-    if(import.meta.env.MODE === 'desktop-electron') {
+    if (import.meta.env.MODE === 'desktop-electron') {
         addReadFileToVM(vm, plugin.parentPathForReadFile)
     }
 
@@ -439,7 +439,7 @@ export async function usePlugin(expose: PluginExpose, plugin: { name: string, co
         setDeepProperty(vm, 'rf.base64.toUint8Array', func)
     })
 
-    if(expose.rf.request) {
+    if (expose.rf.request) {
         // not required looks like, only setQueryParams needed to be overridden
         // vm.newFunction('rf.request.getQueryParams', () => {
         //     console.log('getQueryParams')
@@ -458,7 +458,7 @@ export async function usePlugin(expose: PluginExpose, plugin: { name: string, co
         })
     }
 
-    if(expose.rf.response) {
+    if (expose.rf.response) {
         vm.newFunction('rf.response.getBody', () => {
             const originalBody = expose.rf.response.getBody()
             return vm.newArrayBuffer(originalBody)
@@ -472,14 +472,14 @@ export async function usePlugin(expose: PluginExpose, plugin: { name: string, co
     try {
         console.log(`Executing plugin: ${plugin.name}`)
 
-        if(plugin.code.trim() === '') {
+        if (plugin.code.trim() === '') {
             console.log('Plugin code is empty, skipping execution')
             return
         }
 
         let codeToExecute = plugin.code
 
-        if(requiresAsync) {
+        if (requiresAsync) {
             console.log('Plugin code requires async, wrapping in async function')
             codeToExecute = `
                 async function main() {
@@ -496,7 +496,7 @@ export async function usePlugin(expose: PluginExpose, plugin: { name: string, co
 
         const result = await vm.evalCodeAsync(codeToExecute)
 
-        if(requiresAsync) {
+        if (requiresAsync) {
             const executedPendingJobsCount = arena.executePendingJobs()
             console.log(`Executed ${executedPendingJobsCount} pending jobs`)
         }
@@ -504,13 +504,13 @@ export async function usePlugin(expose: PluginExpose, plugin: { name: string, co
         if ('value' in result) {
             const resultHandle = result.value
             const resultValue = vm.dump(resultHandle)
-            if(resultValue) {
-                if(resultValue.type === 'rejected') {
+            if (resultValue) {
+                if (resultValue.type === 'rejected') {
                     throw resultValue.error
                 } else {
                     console.log('Result', resultValue)
                 }
-                if(resultHandle.alive) {
+                if (resultHandle.alive) {
                     resultHandle.dispose()
                 }
             }
@@ -519,27 +519,27 @@ export async function usePlugin(expose: PluginExpose, plugin: { name: string, co
         if (result.error) {
             const errorHandle = result.error
             const error = vm.dump(errorHandle)
-            if(errorHandle.alive) {
+            if (errorHandle.alive) {
                 errorHandle.dispose()
             }
             throw error
         }
-    } catch(e: any) {
+    } catch (e: any) {
         console.log(e)
         let lineNumber = ''
-        if(e.lineNumber !== null && e.lineNumber !== undefined) {
+        if (e.lineNumber !== null && e.lineNumber !== undefined) {
             lineNumber = e.lineNumber
         } else {
             const lineNumberInfo = /\(eval\.js:(.*?)\)/.exec(e.stack)
-            if(lineNumberInfo) {
+            if (lineNumberInfo) {
                 lineNumber = lineNumberInfo[1]
             }
         }
 
         const parsedLineNumber = Number(lineNumber)
 
-        if(!isNaN(parsedLineNumber)) {
-            if(parsedLineNumber === 0) {
+        if (!isNaN(parsedLineNumber)) {
+            if (parsedLineNumber === 0) {
                 lineNumber = '1'
             } else {
                 lineNumber = (parsedLineNumber - (requiresAsync ? 3 : 0)).toString()
@@ -555,7 +555,7 @@ export async function usePlugin(expose: PluginExpose, plugin: { name: string, co
     // dispose the VM after 5 seconds, to avoid error QuickJSUseAfterFree: Lifetime not alive
     setTimeout(() => {
         freeHandles.forEach((handle) => {
-            if(handle.alive) {
+            if (handle.alive) {
                 handle.dispose()
             }
         })
