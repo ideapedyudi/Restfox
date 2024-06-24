@@ -34,7 +34,19 @@ const storage = multer.diskStorage({
         cb(null, 'data.json');
     }
 });
-const upload = multer({ storage: storage });
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'application/json') {
+        cb(null, true);
+    } else {
+        cb(new Error('Only .json files are allowed'), false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter
+});
 app.post('/backup', upload.single('file'), (req, res) => {
     try {
         if (!req.file) {
