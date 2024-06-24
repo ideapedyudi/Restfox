@@ -43,7 +43,7 @@
             <a href="#" @click.prevent="showLogs" class="bl br">Logs</a>
             <span class="spacer"></span>
             <div>
-                <p>Restfox 😎</p>
+                <p>Restfox, EDIfly Team 💡🧑‍💻😎</p>
             </div>
         </div>
     </div>

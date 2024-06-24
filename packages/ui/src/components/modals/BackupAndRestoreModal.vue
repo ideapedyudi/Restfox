@@ -5,7 +5,7 @@
             This backup will include your full application data (workspaces, requests, response history, open tabs,
             plugins etc).
             <div style="margin-top: 1rem">
-                <button class="button" @click="exportBackup">Backup To Server</button>
+                <button class="button" @click="exportBackup">😎 Backup To Server</button>
             </div>
         </div>
 
@@ -21,7 +21,7 @@
                 </div> -->
 
                 <div style="margin-top: 1.5rem;">
-                    <button class="button">Restore Server</button>
+                    <button class="button">😋 Restore From Server</button>
                 </div>
             </form>
         </div>
@@ -54,20 +54,29 @@ export default {
     },
     methods: {
         async exportBackup() {
-            const blob = await exportDB()
-            downloadBlob(`Restfox_Backup_${todayISODate()}.json`, blob)
+            if (!await window.createConfirm('Are you sure, Backup data?')) {
+                return
+            }
+            try {
+                const blob = await exportDB()
+                downloadBlob(`Restfox_Backup_${todayISODate()}.json`, blob)
+                this.$toast.success('Backup to server successfully')
+            } catch (e) {
+                console.log(e)
+                this.$toast.error('Invalid backup file given')
+            }
         },
         async restoreBackup() {
-            if (!await window.createConfirm('Are you sure?')) {
+            if (!await window.createConfirm('Are you sure, Restored data?')) {
                 return
             }
 
             try {
                 await importDB(this.fileToRestore)
-                this.$toast.success('Backup restored successfully')
+                this.$toast.success('Restored from server successfully')
             } catch (e) {
                 console.log(e)
-                this.$toast.error('Invalid backup file given')
+                this.$toast.error('Invalid restored file given')
             }
         }
     }

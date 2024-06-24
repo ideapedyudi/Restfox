@@ -1564,19 +1564,21 @@ export async function downloadBlob(filename: string, blob: Blob) {
 
     await sendBlobToAPI(blob)
 
-    const link = document.createElement('a')
+    return true;
 
-    link.download = filename
-    link.href = window.URL.createObjectURL(blob)
+    // const link = document.createElement('a')
 
-    const event = new MouseEvent('click', {
-        view: window,
-        bubbles: true,
-        cancelable: true
-    })
+    // link.download = filename
+    // link.href = window.URL.createObjectURL(blob)
 
-    link.dispatchEvent(event)
-    link.remove()
+    // const event = new MouseEvent('click', {
+    //     view: window,
+    //     bubbles: true,
+    //     cancelable: true
+    // })
+
+    // link.dispatchEvent(event)
+    // link.remove()
 }
 
 export function parseContentDispositionHeaderAndGetFileName(headerValue: string, fallbackFileName: string) {
