@@ -31,9 +31,9 @@ export function toTree(array: CollectionItem[]): CollectionItem[] {
     const map: Record<string, number> = {}
     let i
 
-    for(i = 0; i < array.length; i += 1) {
+    for (i = 0; i < array.length; i += 1) {
         map[array[i]._id] = i
-        if(array[i]._type === 'request_group') {
+        if (array[i]._type === 'request_group') {
             array[i].children = []
         }
     }
@@ -41,9 +41,9 @@ export function toTree(array: CollectionItem[]): CollectionItem[] {
     let node
     const res: any[] = []
 
-    for(i = 0; i < array.length; i += 1) {
+    for (i = 0; i < array.length; i += 1) {
         node = array[i]
-        if(node.parentId !== null) {
+        if (node.parentId !== null) {
             array[map[node.parentId]].children?.push(node)
         } else {
             res.push(node)
@@ -61,7 +61,7 @@ export function flattenTree(array: CollectionItem[]) {
         delete newItem.children
         level.push(newItem)
 
-        if(item.children) {
+        if (item.children) {
             level.push(...flattenTree(item.children))
         }
     })
@@ -75,7 +75,7 @@ export function substituteEnvironmentVariables(environment: any, string: string)
     const possibleEnvironmentObjectPaths = getObjectPaths(environment)
 
     possibleEnvironmentObjectPaths.forEach(objectPath => {
-        let objectPathValue:any = getObjectPathValue(environment, objectPath)
+        let objectPathValue: any = getObjectPathValue(environment, objectPath)
 
         if (typeof objectPathValue === 'object') {
             objectPathValue = JSON.stringify(objectPathValue)
@@ -106,15 +106,15 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
     electronSwitchToChromiumFetch: boolean,
     disableSSLVerification: boolean
 }): Promise<RequestInitialResponse> {
-    if('__EXTENSION_HOOK__' in window && window.__EXTENSION_HOOK__ === 'Restfox CORS Helper Enabled') {
+    if ('__EXTENSION_HOOK__' in window && window.__EXTENSION_HOOK__ === 'Restfox CORS Helper Enabled') {
         let bodyHint: any = null
 
-        if(body instanceof FormData) {
+        if (body instanceof FormData) {
             bodyHint = 'FormData'
             body = Array.from(body.entries())
             let i = 0
-            for(const item of body) {
-                if(item[1] instanceof File) {
+            for (const item of body) {
+                if (item[1] instanceof File) {
                     body[i][1] = {
                         name: item[1].name,
                         type: item[1].type,
@@ -125,7 +125,7 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
             }
         }
 
-        if(body instanceof File) {
+        if (body instanceof File) {
             bodyHint = 'File'
             body = {
                 name: body.name,
@@ -154,18 +154,18 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
                     return
                 }
 
-                if(message.data.event === 'response') {
+                if (message.data.event === 'response') {
                     resolve(message.data.eventData)
-                    window.removeEventListener('message',  messageHandler)
+                    window.removeEventListener('message', messageHandler)
                 }
 
-                if(message.data.event === 'responseError') {
+                if (message.data.event === 'responseError') {
                     reject(message.data.eventData)
-                    window.removeEventListener('message',  messageHandler)
+                    window.removeEventListener('message', messageHandler)
                 }
             }
 
-            window.addEventListener('message',  messageHandler)
+            window.addEventListener('message', messageHandler)
 
             abortControllerSignal.onabort = () => {
                 window.postMessage({
@@ -173,12 +173,44 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
                     eventId,
                 })
                 reject(new DOMException('The user aborted a request.', 'AbortError'))
-                window.removeEventListener('message',  messageHandler)
+                window.removeEventListener('message', messageHandler)
             }
         })
     }
 
-    if(import.meta.env.MODE === 'web-standalone') {
+    if (import.meta.env.MODE === 'web-standalone') {
+        if (url?.hostname === "localhost" || url?.hostname === "127.0 0.1") {
+            const startTime = new Date()
+
+            const response = await fetch(url, {
+                method,
+                headers,
+                body: method !== 'GET' ? body : undefined,
+                signal: abortControllerSignal
+            })
+
+            const endTime = new Date()
+
+            const status = response.status
+            const statusText = response.statusText
+            const responseHeaders = [...response.headers.entries()]
+
+            const responseBlob = await response.blob()
+            const mimeType = responseBlob.type
+            const buffer = await responseBlob.arrayBuffer()
+
+            const timeTaken = Number(endTime) - Number(startTime)
+
+            return {
+                status,
+                statusText,
+                headers: responseHeaders,
+                mimeType,
+                buffer,
+                timeTaken
+            }
+        }
+
         const proxyHeaders: Record<string, string> = {
             'x-proxy-req-url': url.toString(),
             'x-proxy-req-method': method
@@ -198,12 +230,12 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
         const responseBody = await response.json()
 
         return new Promise((resolve, reject) => {
-            if(responseBody.event === 'response') {
+            if (responseBody.event === 'response') {
                 responseBody.eventData.buffer = new Uint8Array(responseBody.eventData.buffer).buffer
                 resolve(responseBody.eventData)
             }
 
-            if(responseBody.event === 'responseError') {
+            if (responseBody.event === 'responseError') {
                 responseBody.eventData = new Error(responseBody.eventData)
                 reject(responseBody.eventData)
             }
@@ -213,12 +245,12 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
     if (import.meta.env.MODE === 'desktop-electron' && !flags.electronSwitchToChromiumFetch) {
         let bodyHint: any = null
 
-        if(body instanceof FormData) {
+        if (body instanceof FormData) {
             bodyHint = 'FormData'
             body = Array.from(body.entries())
             let i = 0
-            for(const item of body) {
-                if(item[1] instanceof File) {
+            for (const item of body) {
+                if (item[1] instanceof File) {
                     body[i][1] = {
                         name: item[1].name,
                         type: item[1].type,
@@ -229,7 +261,7 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
             }
         }
 
-        if(body instanceof File) {
+        if (body instanceof File) {
             bodyHint = 'File'
             body = {
                 name: body.name,
@@ -255,12 +287,12 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
                 bodyHint,
                 disableSSLVerification: flags.disableSSLVerification,
             }).then((data: any) => {
-                if(data.event === 'response') {
+                if (data.event === 'response') {
                     data.eventData.buffer = new Uint8Array(data.eventData.buffer).buffer
                     resolve(data.eventData)
                 }
 
-                if(data.event === 'responseError') {
+                if (data.event === 'responseError') {
                     reject(new Error(data.eventData))
                 }
             }).catch((error: any) => {
@@ -310,7 +342,7 @@ export async function createRequestData(
     plugins: Plugin[],
     workspaceLocation: string | null
 ): Promise<CreateRequestDataReturn> {
-    for(const plugin of plugins) {
+    for (const plugin of plugins) {
         const { expose } = createRequestContextForPlugin(request, environment, setEnvironmentVariable, state.testResults)
 
         state.currentPlugin = plugin.type === 'script' ? 'Script: Pre Request' : `${plugin.name} (Pre Request)`
@@ -331,8 +363,8 @@ export async function createRequestData(
 
     let body: any = null
 
-    if(request.body && request.body.mimeType === 'application/x-www-form-urlencoded') {
-        if('params' in request.body && request.body.params) {
+    if (request.body && request.body.mimeType === 'application/x-www-form-urlencoded') {
+        if ('params' in request.body && request.body.params) {
             body = new URLSearchParams(
                 Object.fromEntries(
                     request.body.params.filter(item => !item.disabled).map(item => {
@@ -346,15 +378,15 @@ export async function createRequestData(
         }
     }
 
-    if(request.body) {
-        if(request.body.mimeType === 'multipart/form-data') {
-            if('params' in request.body) {
+    if (request.body) {
+        if (request.body.mimeType === 'multipart/form-data') {
+            if ('params' in request.body) {
                 const formData = new FormData()
                 request.body.params?.filter(item => !item.disabled).forEach(param => {
-                    if(param.type === 'text') {
+                    if (param.type === 'text') {
                         formData.append(substituteEnvironmentVariables(environment, param.name), substituteEnvironmentVariables(environment, param.value))
                     } else if (param.files) {
-                        for(const file of param.files) {
+                        for (const file of param.files) {
                             formData.append(substituteEnvironmentVariables(environment, param.name), file as File)
                         }
                     }
@@ -363,18 +395,18 @@ export async function createRequestData(
             }
         }
 
-        if(request.body.mimeType === 'text/plain' || request.body.mimeType === 'application/json' || request.body.mimeType === 'application/graphql') {
+        if (request.body.mimeType === 'text/plain' || request.body.mimeType === 'application/json' || request.body.mimeType === 'application/graphql') {
             body = substituteEnvironmentVariables(environment, request.body.text ?? '')
         }
 
-        if(request.body.mimeType === 'application/octet-stream' && request.body.fileName instanceof File) {
+        if (request.body.mimeType === 'application/octet-stream' && request.body.fileName instanceof File) {
             body = request.body.fileName
         }
     }
 
     let urlWithEnvironmentVariablesSubstituted = substituteEnvironmentVariables(environment, request.url!)
 
-    if(request.pathParameters) {
+    if (request.pathParameters) {
         request.pathParameters.filter(item => !item.disabled).forEach(pathParameter => {
             urlWithEnvironmentVariablesSubstituted = urlWithEnvironmentVariablesSubstituted.replaceAll(
                 `:${substituteEnvironmentVariables(environment, pathParameter.name)}`, substituteEnvironmentVariables(environment, pathParameter.value)
@@ -388,14 +420,14 @@ export async function createRequestData(
 
     const urlCopy = new URL(urlWithEnvironmentVariablesSubstituted)
 
-    if('parameters' in request && request.parameters) {
+    if ('parameters' in request && request.parameters) {
         request.parameters.filter(item => !item.disabled).forEach(param => {
             const paramName = substituteEnvironmentVariables(environment, param.name)
             const paramValue = substituteEnvironmentVariables(environment, param.value)
 
             // if the parameter with the same name & value is already in the url, then we remove it, to prevent duplicate parameters
             // @ts-expect-error searchParams.has has no 2nd parameter on any browser other than firefox
-            if(urlCopy.searchParams.has(paramName, paramValue) && urlCopy.searchParams.getAll(paramName).some(value => value === paramValue)) {
+            if (urlCopy.searchParams.has(paramName, paramValue) && urlCopy.searchParams.getAll(paramName).some(value => value === paramValue)) {
                 // console.log('Removing duplicate parameter', paramName, paramValue)
                 // @ts-expect-error searchParams.delete has no 2nd parameter on any browser other than firefox
                 url.searchParams.delete(paramName, paramValue)
@@ -415,48 +447,48 @@ export async function createRequestData(
         headers[substituteEnvironmentVariables(environment, header.toLowerCase())] = substituteEnvironmentVariables(environment, parentHeaders[header])
     })
 
-    if('GLOBAL_HEADERS' in environment) {
+    if ('GLOBAL_HEADERS' in environment) {
         Object.keys(environment.GLOBAL_HEADERS).forEach(header => {
             headers[header.toLowerCase()] = environment.GLOBAL_HEADERS[header]
         })
     }
 
-    if('headers' in request && request.headers !== undefined) {
+    if ('headers' in request && request.headers !== undefined) {
         const enabledHeaders = request.headers.filter(header => !header.disabled)
-        for(const header of enabledHeaders) {
+        for (const header of enabledHeaders) {
             const headerName = substituteEnvironmentVariables(environment, header.name.toLowerCase())
             const headerValue = substituteEnvironmentVariables(environment, header.value)
 
-            if(body instanceof FormData && headerName === 'content-type') { // exclude content-type header for multipart/form-data
+            if (body instanceof FormData && headerName === 'content-type') { // exclude content-type header for multipart/form-data
                 continue
             }
 
-            if(headerName !== '') {
+            if (headerName !== '') {
                 headers[headerName] = headerValue
             }
         }
     }
 
     const setAuthentication = (authentication: RequestAuthentication) => {
-        if(authentication.type === 'basic') {
+        if (authentication.type === 'basic') {
             headers['Authorization'] = generateBasicAuthString(
                 substituteEnvironmentVariables(environment, authentication.username ?? ''),
                 substituteEnvironmentVariables(environment, authentication.password ?? '')
             )
         }
 
-        if(authentication.type === 'bearer') {
+        if (authentication.type === 'bearer') {
             const authenticationBearerPrefix = authentication.prefix !== undefined && authentication.prefix !== '' ? authentication.prefix : 'Bearer'
             const authenticationBearerToken = authentication.token !== undefined ? authentication.token : ''
             headers['Authorization'] = `${substituteEnvironmentVariables(environment, authenticationBearerPrefix)} ${substituteEnvironmentVariables(environment, authenticationBearerToken)}`
         }
     }
 
-    if(request.authentication && request.authentication.type !== 'No Auth' && !request.authentication.disabled) {
+    if (request.authentication && request.authentication.type !== 'No Auth' && !request.authentication.disabled) {
         setAuthentication(request.authentication)
     }
 
-    if(parentAuthentication && parentAuthentication.type !== 'No Auth' && !parentAuthentication.disabled && (request.authentication === undefined || request.authentication.type === 'No Auth')) {
+    if (parentAuthentication && parentAuthentication.type !== 'No Auth' && !parentAuthentication.disabled && (request.authentication === undefined || request.authentication.type === 'No Auth')) {
         setAuthentication(parentAuthentication)
     }
 
@@ -552,23 +584,23 @@ export async function handleRequest(
             testResults: [],
         }
 
-        if(request.parameters) {
+        if (request.parameters) {
             responseToSend.request.original.parameters = JSON.parse(JSON.stringify(request.parameters))
         }
 
-        if(request.pathParameters) {
+        if (request.pathParameters) {
             responseToSend.request.original.pathParameters = JSON.parse(JSON.stringify(request.pathParameters))
         }
 
-        if(request.headers) {
+        if (request.headers) {
             responseToSend.request.original.headers = JSON.parse(JSON.stringify(request.headers))
         }
 
-        if(request.authentication) {
+        if (request.authentication) {
             responseToSend.request.original.authentication = JSON.parse(JSON.stringify(request.authentication))
         }
 
-        for(const plugin of plugins) {
+        for (const plugin of plugins) {
             const { expose } = createResponseContextForPlugin(responseToSend, environment, setEnvironmentVariable, state.testResults)
 
             state.currentPlugin = plugin.type === 'script' ? 'Script: Post Request' : `${plugin.name} (Post Request)`
@@ -585,21 +617,21 @@ export async function handleRequest(
         responseToSend.testResults = state.testResults
 
         return responseToSend
-    } catch(e: any) {
+    } catch (e: any) {
         console.error(e)
 
         let error = 'Error: Request failed'
 
-        if(typeof e !== 'string')  {
-            if(e.message.includes('Invalid URL')) {
+        if (typeof e !== 'string') {
+            if (e.message.includes('Invalid URL')) {
                 error = 'Error: Invalid URL'
             }
 
-            if(e.name === 'AbortError') {
+            if (e.name === 'AbortError') {
                 error = 'Error: Request Cancelled'
             }
 
-            if(e.message === 'Unable to parse plugin') {
+            if (e.message === 'Unable to parse plugin') {
                 error = `Error in Plugin "${state.currentPlugin}"${e.lineNumber !== '' ? ' at line number ' + e.lineNumber : ''}\n\n${e.originalError.name}: ${e.originalError.message}`
             }
         }
@@ -618,10 +650,10 @@ export function convertInsomniaExportToRestfoxCollection(json: any, workspaceId:
     const workspace = json.resources.find((item: any) => item._type === 'workspace')
 
     json.resources.filter((item: any) => ['cookie_jar', 'api_spec', 'environment', 'proto_file', 'unit_test_suite'].includes(item._type) == false).forEach((item: any) => {
-        if(item._type === 'workspace' || item._type === 'request_group') {
+        if (item._type === 'workspace' || item._type === 'request_group') {
             let parentId = item.parentId
 
-            if(item.parentId === '__WORKSPACE_ID__' && !workspace) {
+            if (item.parentId === '__WORKSPACE_ID__' && !workspace) {
                 parentId = null
             }
 
@@ -638,7 +670,7 @@ export function convertInsomniaExportToRestfoxCollection(json: any, workspaceId:
                 mimeType: 'No Body'
             }
 
-            if(item.body.mimeType === 'application/x-www-form-urlencoded') {
+            if (item.body.mimeType === 'application/x-www-form-urlencoded') {
                 body = {
                     mimeType: item.body.mimeType,
                     params: 'params' in item.body ? item.body.params.map((parameter: RequestParam) => ({
@@ -650,7 +682,7 @@ export function convertInsomniaExportToRestfoxCollection(json: any, workspaceId:
                 }
             }
 
-            if(item.body.mimeType === 'text/plain' || item.body.mimeType === 'application/json' || item.body.mimeType === 'application/graphql') {
+            if (item.body.mimeType === 'text/plain' || item.body.mimeType === 'application/json' || item.body.mimeType === 'application/graphql') {
                 body = {
                     mimeType: item.body.mimeType,
                     text: item.body.text
@@ -659,7 +691,7 @@ export function convertInsomniaExportToRestfoxCollection(json: any, workspaceId:
 
             let parentId = item.parentId
 
-            if(item.parentId === '__WORKSPACE_ID__' && !workspace) {
+            if (item.parentId === '__WORKSPACE_ID__' && !workspace) {
                 parentId = null
             }
 
@@ -695,7 +727,7 @@ export function convertInsomniaExportToRestfoxCollection(json: any, workspaceId:
 }
 
 export async function convertPostmanExportToRestfoxCollection(json: any, isZip: boolean, workspaceId: string) {
-    if(isZip) {
+    if (isZip) {
         const zip = new JSZip()
         const extractedZip = await zip.loadAsync(json)
         const filePaths = Object.keys(extractedZip.files)
@@ -710,15 +742,15 @@ export async function convertPostmanExportToRestfoxCollection(json: any, isZip: 
 
         const collections: any[] = []
 
-        for(const collectionId of Object.keys(archiveCollection)) {
+        for (const collectionId of Object.keys(archiveCollection)) {
             collections.push(JSON.parse(await extractedZip.files[filePathMap[`collection/${collectionId}.json`]].async('text')))
         }
 
         return importPostmanV2(collections, workspaceId)
     } else {
-        if('info' in json) {
-            if('schema' in json.info) {
-                if(json.info.schema === 'https://schema.getpostman.com/json/collection/v2.0.0/collection.json' || json.info.schema === 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json') {
+        if ('info' in json) {
+            if ('schema' in json.info) {
+                if (json.info.schema === 'https://schema.getpostman.com/json/collection/v2.0.0/collection.json' || json.info.schema === 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json') {
                     return importPostmanV2([json], workspaceId)
                 }
             }
@@ -728,7 +760,7 @@ export async function convertPostmanExportToRestfoxCollection(json: any, isZip: 
 }
 
 function importPostmanV1(collections: any[], workspaceId: string) {
-    const collection: CollectionItem[]  = []
+    const collection: CollectionItem[] = []
 
     collections.forEach(item => {
         const requests: CollectionItem[] = []
@@ -738,7 +770,7 @@ function importPostmanV1(collections: any[], workspaceId: string) {
                 mimeType: 'No Body'
             }
 
-            if(request.dataMode === 'urlencoded') {
+            if (request.dataMode === 'urlencoded') {
                 const params: RequestParam[] = []
                 const requestData = request.data !== null ? request.data : []
                 requestData.forEach((requestDataItem: any) => {
@@ -755,7 +787,7 @@ function importPostmanV1(collections: any[], workspaceId: string) {
                 }
             }
 
-            if(request.dataMode === 'raw') {
+            if (request.dataMode === 'raw') {
                 body = {
                     mimeType: 'text/plain',
                     text: request.rawModeData
@@ -815,7 +847,7 @@ function handlePostmanV2CollectionItem(postmanCollectionItem: any, parentId: str
 
     postmanCollectionItem.item.forEach((request: any) => {
         const requestId = request.id ?? nanoid()
-        if('item' in request) {
+        if ('item' in request) {
             requests.push({
                 _id: requestId,
                 _type: 'request_group',
@@ -831,8 +863,8 @@ function handlePostmanV2CollectionItem(postmanCollectionItem: any, parentId: str
             mimeType: 'No Body'
         }
 
-        if('body' in request.request && 'mode' in request.request.body) {
-            if(request.request.body.mode === 'urlencoded') {
+        if ('body' in request.request && 'mode' in request.request.body) {
+            if (request.request.body.mode === 'urlencoded') {
                 const params: RequestParam[] = []
                 const requestData = request.request.body.urlencoded
                 requestData.forEach((requestDataItem: any) => {
@@ -849,18 +881,18 @@ function handlePostmanV2CollectionItem(postmanCollectionItem: any, parentId: str
                 }
             }
 
-            if(request.request.body.mode === 'raw') {
+            if (request.request.body.mode === 'raw') {
                 let mimeType = 'text/plain'
 
-                if('options' in request.request.body && 'raw' in request.request.body.options && request.request.body.options.raw.language === 'json') {
+                if ('options' in request.request.body && 'raw' in request.request.body.options && request.request.body.options.raw.language === 'json') {
                     mimeType = 'application/json'
                 }
 
-                if(mimeType === 'text/plain') {
+                if (mimeType === 'text/plain') {
                     try {
                         JSON.parse(request.request.body.raw)
                         mimeType = 'application/json'
-                    } catch {}
+                    } catch { }
                 }
 
                 body = {
@@ -893,19 +925,19 @@ function handlePostmanV2CollectionItem(postmanCollectionItem: any, parentId: str
 
         let url = ''
 
-        if('url' in request.request) {
+        if ('url' in request.request) {
             url = typeof request.request.url === 'string' ? request.request.url : request.request.url.raw
         }
 
         let authentication: RequestAuthentication = { type: 'No Auth' }
 
-        if('auth' in request.request) {
-            if(request.request.auth.type === 'bearer') {
+        if ('auth' in request.request) {
+            if (request.request.auth.type === 'bearer') {
                 authentication = {
                     type: 'bearer'
                 }
                 const bearerAuth = 'bearer' in request.request.auth ? request.request.auth.bearer : []
-                if(bearerAuth.length > 0) {
+                if (bearerAuth.length > 0) {
                     authentication = {
                         type: 'bearer',
                         token: bearerAuth[0].value
@@ -959,7 +991,7 @@ function importRestfoxV1(collections: CollectionItem[], workspaceId: string) {
     const plugins: Plugin[] = []
 
     collections.forEach(item => {
-        if(item._type === 'request_group') {
+        if (item._type === 'request_group') {
             collection.push({
                 _id: item._id,
                 _type: 'request_group',
@@ -972,7 +1004,7 @@ function importRestfoxV1(collections: CollectionItem[], workspaceId: string) {
                 sortOrder: item.sortOrder
             })
         } else {
-            if(item._type === 'socket') {
+            if (item._type === 'socket') {
                 collection.push({
                     ...item,
                     workspaceId,
@@ -1005,7 +1037,7 @@ function importRestfoxV1(collections: CollectionItem[], workspaceId: string) {
             }
         }
 
-        if(item.plugins) {
+        if (item.plugins) {
             plugins.push(...item.plugins)
         }
     })
@@ -1020,8 +1052,8 @@ function importRestfoxV1(collections: CollectionItem[], workspaceId: string) {
 }
 
 export function convertRestfoxExportToRestfoxCollection(json: any, workspaceId: string) {
-    if('exportedFrom' in json) {
-        if(json.exportedFrom === 'Restfox-1.0.0') {
+    if ('exportedFrom' in json) {
+        if (json.exportedFrom === 'Restfox-1.0.0') {
             return importRestfoxV1(json.collection, workspaceId)
         }
     }
@@ -1049,7 +1081,7 @@ export function extractPathParameters(openapiSchema: string) {
                     } else {
                         pathParams[path[0] + '-' + [method[0].toLowerCase()]] = [{
                             name: param.name,
-                            value:  param.schema?.example ?? '',
+                            value: param.schema?.example ?? '',
                         }]
                     }
                 }
@@ -1065,7 +1097,7 @@ export async function convertOpenAPIExportToRestfoxCollection(exportString: stri
         exportString.replace(/\/{([^}]+)}/g, '/:$1:')
     )
     const pathParams = extractPathParameters(exportString)
-    initExport.data.resources = initExport.data.resources.map((item:{[x:string]:any}) => {
+    initExport.data.resources = initExport.data.resources.map((item: { [x: string]: any }) => {
         if (item.url) {
             item['url'] = item.url.replace(/\/:([^:]+):/g, '/{$1}')
             item['pathParameters'] = pathParams[item['url'].replace(/{{ base_url }}/, '') + '-' + item['method'].toLowerCase()] ?? []
@@ -1079,12 +1111,12 @@ export async function convertOpenAPIExportToRestfoxCollection(exportString: stri
 export async function convertCurlCommandToRestfoxCollection(curlCommand: string, workspaceId: string) {
     const insomniaExport: any = curlConvert(curlCommand)
 
-    if(insomniaExport === null) {
+    if (insomniaExport === null) {
         throw new Error('Invalid Curl Command')
     }
 
-    if('body' in insomniaExport[0]) {
-        if('text' in insomniaExport[0].body) {
+    if ('body' in insomniaExport[0]) {
+        if ('text' in insomniaExport[0].body) {
             // for some reason we get \\n instead of \n in the text field
             insomniaExport[0].body.text = insomniaExport[0].body.text.replaceAll('\\n', '\n')
         }
@@ -1100,7 +1132,7 @@ export async function fileToJSON(file: File) {
             if (event.target) {
                 try {
                     resolve(JSON.parse(event.target.result as string))
-                } catch(e) {
+                } catch (e) {
                     reject(e)
                 }
             } else {
@@ -1130,12 +1162,12 @@ export async function fileToString(file: File): Promise<string> {
 // From: https://stackoverflow.com/a/57218589/4932305 but modified to return children on parent matches
 export function filterTree(array: CollectionItem[], name: string) {
     return array.reduce((r: any[], { children = [], ...o }) => {
-        if(o.name.toLowerCase().includes(name.toLowerCase())) {
+        if (o.name.toLowerCase().includes(name.toLowerCase())) {
             r.push(Object.assign(o, { children }))
             return r
         }
         children = filterTree(children, name)
-        if(children.length) {
+        if (children.length) {
             r.push(Object.assign(o, { children }))
         }
         return r
@@ -1145,7 +1177,7 @@ export function filterTree(array: CollectionItem[], name: string) {
 export function addSortOrderToTree(array: CollectionItem[]) {
     array.forEach((item, index) => {
         item.sortOrder = index
-        if(item.children) {
+        if (item.children) {
             addSortOrderToTree(item.children)
         }
     })
@@ -1154,7 +1186,7 @@ export function addSortOrderToTree(array: CollectionItem[]) {
 export function sortTree(array: CollectionItem[]) {
     array.sort((a, b) => a.sortOrder! - b.sortOrder!)
     array.forEach(item => {
-        if(item.children) {
+        if (item.children) {
             sortTree(item.children)
         }
     })
@@ -1209,12 +1241,12 @@ export function getChildIds(arr: any[], id: string) {
 export function findItemInTreeById(array: CollectionItem[], id: string): CollectionItem | null {
     let result = null
     function findItemInTreeByIdRecurse(array2: CollectionItem[], id2: string) {
-        for(let i = 0; i < array2.length; i++) {
-            if(array2[i]._id === id2) {
+        for (let i = 0; i < array2.length; i++) {
+            if (array2[i]._id === id2) {
                 result = array2[i]
             }
 
-            if('children' in array2[i]) {
+            if ('children' in array2[i]) {
                 findItemInTreeByIdRecurse(array2[i].children as CollectionItem[], id2)
             }
         }
@@ -1227,12 +1259,12 @@ export function generateNewIdsForTreeItemChildren(treeItem: CollectionItem, oldI
     const parentId = treeItem._id
     treeItem.children?.forEach(item => {
         const newId = nanoid()
-        if(oldIdNewIdMapping !== null) {
+        if (oldIdNewIdMapping !== null) {
             oldIdNewIdMapping[item._id] = newId
         }
         item._id = newId
         item.parentId = parentId
-        if('children' in item) {
+        if ('children' in item) {
             generateNewIdsForTreeItemChildren(item, oldIdNewIdMapping)
         }
     })
@@ -1245,13 +1277,13 @@ export function generateNewIdsForTree(array: CollectionItem[]) {
         const newId = nanoid()
         oldIdNewIdMapping[treeItem._id] = newId
         treeItem._id = newId
-        if('children' in treeItem) {
+        if ('children' in treeItem) {
             treeItem.children?.forEach(item => {
                 const newId = nanoid()
                 oldIdNewIdMapping[item._id] = newId
                 item._id = newId
                 item.parentId = treeItem._id
-                if('children' in item) {
+                if ('children' in item) {
                     generateNewIdsForTreeItemChildren(item, oldIdNewIdMapping)
                 }
             })
@@ -1297,17 +1329,17 @@ export function isFirstIdIndirectOrDirectParentOfSecondIdInTree(array: any, firs
 
     function f(data: any, a: any, b: any, p = false) {
         if (Array.isArray(data)) {
-            data.forEach(function(o) {
-                if(p && a == o._id) {
+            data.forEach(function (o) {
+                if (p && a == o._id) {
                     result = true
                 } else {
-                    if('children' in o) {
+                    if ('children' in o) {
                         f(o.children, a, b, !p ? b == o._id : p)
                     }
                 }
             })
         } else {
-            if('children' in data) {
+            if ('children' in data) {
                 f(data.children, a, b, p)
             }
         }
@@ -1321,7 +1353,7 @@ export function isFirstIdIndirectOrDirectParentOfSecondIdInTree(array: any, firs
 export function dateFormat(date: number, includeSeconds = false) {
     let format = 'DD-MMM-YY hh:mm A'
 
-    if(includeSeconds) {
+    if (includeSeconds) {
         format = 'DD-MMM-YY hh:mm:ss A'
     }
 
@@ -1357,14 +1389,14 @@ export function getObjectPaths(object: object): string[] {
     const paths: any[] = []
 
     function recurse(obj: any, keyParent = '') {
-        if(typeof obj === 'number' || typeof obj === 'string' || obj === null) {
+        if (typeof obj === 'number' || typeof obj === 'string' || obj === null) {
             return
         }
         const isArray = Array.isArray(obj)
         Object.keys(obj).forEach(key => {
             let newKeyParent = keyParent
-            if(newKeyParent) {
-                if(isArray) {
+            if (newKeyParent) {
+                if (isArray) {
                     newKeyParent = `${newKeyParent}[${key}]`
                 } else {
                     newKeyParent = `${newKeyParent}.${key}`
@@ -1425,37 +1457,37 @@ export function checkHotkeyAgainstKeyEvent(hotkey: string, event: KeyboardEvent)
 
     let hotkeyMatched = true
 
-    if(ctrlKeyRequired) {
-        if(!event.ctrlKey) {
+    if (ctrlKeyRequired) {
+        if (!event.ctrlKey) {
             hotkeyMatched = false
         }
     } else {
-        if(event.ctrlKey) {
+        if (event.ctrlKey) {
             hotkeyMatched = false
         }
     }
 
-    if(altKeyRequired) {
-        if(!event.altKey) {
+    if (altKeyRequired) {
+        if (!event.altKey) {
             hotkeyMatched = false
         }
     } else {
-        if(event.altKey) {
+        if (event.altKey) {
             hotkeyMatched = false
         }
     }
 
-    if(shiftKeyRequired) {
-        if(!event.shiftKey) {
+    if (shiftKeyRequired) {
+        if (!event.shiftKey) {
             hotkeyMatched = false
         }
     } else {
-        if(event.shiftKey) {
+        if (event.shiftKey) {
             hotkeyMatched = false
         }
     }
 
-    if(event.key.toLowerCase() !== requiredKey?.toLowerCase()) {
+    if (event.key.toLowerCase() !== requiredKey?.toLowerCase()) {
         hotkeyMatched = false
     }
 
@@ -1547,7 +1579,7 @@ export function generateId() {
 
 export function setEnvironmentVariable(store: ActionContext<State, State>, objectPath: string, value: string) {
     try {
-        if(store.state.activeWorkspace === null) {
+        if (store.state.activeWorkspace === null) {
             throw new Error('activeWorkspace is null')
         }
 
@@ -1560,17 +1592,17 @@ export function setEnvironmentVariable(store: ActionContext<State, State>, objec
         ]
         setObjectPathValue(environmentToModify, objectPath, value)
         store.state.activeWorkspace.environment = environmentToModify
-        store.commit('updateWorkspaceEnvironment',  {
+        store.commit('updateWorkspaceEnvironment', {
             workspaceId: store.state.activeWorkspace._id,
             environment: environmentToModify
         })
         const currentEnvironment = environmentsToModify.find(environmentItem => environmentItem.name === (store.state.activeWorkspace!.currentEnvironment ?? 'Default'))
         currentEnvironment.environment = environmentToModify
-        store.commit('updateWorkspaceEnvironments',  {
+        store.commit('updateWorkspaceEnvironments', {
             workspaceId: store.state.activeWorkspace._id,
             environments: environmentsToModify
         })
-    } catch(e) {
+    } catch (e) {
         console.error('Failed to set environment variable:')
         console.error(e)
     }
@@ -1579,13 +1611,13 @@ export function setEnvironmentVariable(store: ActionContext<State, State>, objec
 export function prependParentTitleToChildTitle(array: CollectionItem[], prepend = '') {
     array.forEach(item => {
         item.name = `${prepend ? prepend + ' ' : ''}${item.name}`
-        if(item.children) {
+        if (item.children) {
             prependParentTitleToChildTitle(item.children, item.name + ' → ')
         }
     })
 }
 
-export function debounce<T extends(...args: any[]) => any>(
+export function debounce<T extends (...args: any[]) => any>(
     func: T,
     timeout = 300
 ): (...args: Parameters<T>) => void {
@@ -1596,7 +1628,7 @@ export function debounce<T extends(...args: any[]) => any>(
     }
 }
 
-export function getAlertConfirmPromptContainer(componentRootElement: HTMLElement) : {
+export function getAlertConfirmPromptContainer(componentRootElement: HTMLElement): {
     createPrompt: any
     createConfirm: any
     createAlert: any
@@ -1620,7 +1652,7 @@ export function uriParse(urlString: string): {
     hash: string | null;
     search: string | null;
 } {
-    const { protocol, host, port, pathname, hash, search}  = new URL(urlString)
+    const { protocol, host, port, pathname, hash, search } = new URL(urlString)
     return { protocol, host, port, pathname, hash, search }
 }
 

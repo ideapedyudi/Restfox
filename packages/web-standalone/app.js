@@ -8,14 +8,16 @@ const port = process.env.PORT || 4004
 app.use(express.static('public'))
 app.use(express.raw({ type: '*/*' }))
 
-app.post('/proxy', async(req, res) => {
+app.post('/proxy', async (req, res) => {
     const url = req.headers['x-proxy-req-url']
     const method = req.headers['x-proxy-req-method']
     const headers = {}
     const body = req.body
 
+    console.log(url)
+
     Object.keys(req.headers).forEach(header => {
-        if(header.startsWith('x-proxy-req-header-')) {
+        if (header.startsWith('x-proxy-req-header-')) {
             headers[header.replace('x-proxy-req-header-', '')] = req.headers[header]
         }
     })
@@ -54,7 +56,7 @@ app.post('/proxy', async(req, res) => {
             event: 'response',
             eventData: responseToSend
         })
-    } catch(e) {
+    } catch (e) {
         res.send({
             event: 'responseError',
             eventData: e.message
