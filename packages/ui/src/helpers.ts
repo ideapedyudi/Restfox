@@ -9,7 +9,7 @@ import { HighlightStyle } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 import { convert as curlConvert } from './parsers/curl'
 import yaml from 'js-yaml'
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import FormDataNode from 'form-data';
 import {
     CollectionItem,
@@ -192,26 +192,25 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
                 signal: abortControllerSignal
             })
 
-            const response = await fetch(url, {
+            const config: AxiosRequestConfig = {
+                url: url.toString(),
                 method,
                 headers,
-                body: method !== 'GET' ? body : undefined,
-                signal: abortControllerSignal
-            })
+                data: method !== 'GET' ? body : undefined,
+                signal: abortControllerSignal,
+                responseType: 'arraybuffer' // Ensures response data is returned as an ArrayBuffer
+            };
 
-            console.log(response)
+            const response: AxiosResponse<ArrayBuffer> = await axios(config);
 
-            const endTime = new Date()
+            const endTime = new Date();
 
-            const status = response.status
-            const statusText = response.statusText
-            const responseHeaders = [...response.headers.entries()]
-
-            const responseBlob = await response.blob()
-            const mimeType = responseBlob.type
-            const buffer = await responseBlob.arrayBuffer()
-
-            const timeTaken = Number(endTime) - Number(startTime)
+            const status = response.status;
+            const statusText = response.statusText;
+            const responseHeaders: [string, string][] = Object.entries(response.headers);
+            const buffer = response.data;
+            const mimeType = response.headers['content-type'];
+            const timeTaken = endTime.getTime() - startTime.getTime();
 
             return {
                 status,
@@ -220,7 +219,7 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
                 mimeType,
                 buffer,
                 timeTaken
-            }
+            };
         }
 
         const proxyHeaders: Record<string, string> = {
