@@ -181,8 +181,16 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
     }
 
     if (import.meta.env.MODE === 'web-standalone') {
+        console.log(url?.hostname)
         if (url?.hostname === "localhost" || url?.hostname === "127.0 0.1") {
             const startTime = new Date()
+
+            console.log({
+                method,
+                headers,
+                body: method !== 'GET' ? body : undefined,
+                signal: abortControllerSignal
+            })
 
             const response = await fetch(url, {
                 method,
@@ -190,6 +198,8 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
                 body: method !== 'GET' ? body : undefined,
                 signal: abortControllerSignal
             })
+
+            console.log(response)
 
             const endTime = new Date()
 
