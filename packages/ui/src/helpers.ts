@@ -188,7 +188,7 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
             console.log({
                 method,
                 headers,
-                body: method !== 'GET' ? body : undefined,
+                body: method !== 'GET' ? JSON.parse(body) : undefined,
                 signal: abortControllerSignal
             })
 
