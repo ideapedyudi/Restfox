@@ -185,18 +185,11 @@ export async function fetchWrapper(url: URL, method: string, headers: Record<str
         if (url?.hostname === "localhost" || url?.hostname === "127.0 0.1") {
             const startTime = new Date()
 
-            console.log({
-                method,
-                headers,
-                body: method !== 'GET' ? JSON.parse(body) : undefined,
-                signal: abortControllerSignal
-            })
-
             const config: AxiosRequestConfig = {
                 url: url.toString(),
                 method,
                 headers,
-                data: method !== 'GET' ? body : undefined,
+                data: method !== 'GET' ? JSON.parse(body) : undefined,
                 signal: abortControllerSignal,
                 responseType: 'arraybuffer' // Ensures response data is returned as an ArrayBuffer
             };
